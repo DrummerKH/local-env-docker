@@ -1,0 +1,93 @@
+version: '2.1'
+
+services:
+
+### PostgreSQL 9.5 Container ####################################
+    postgres-9.5:
+        build: ./docker/postgres-9.5
+        container_name: postgres-9.5
+        mem_limit: 1024m
+        environment:
+            - POSTGRES_USER=docker
+            - POSTGRES_PASSWORD=docker
+            - PGDATA=/var/lib/postgresql/data/pgdata
+        ports:
+            - ${PG_PORT:-5432}:5432
+        volumes:
+            - /var/lib/postgresql/data/pgdata
+
+### MYSQL 5.6 Container #########################################
+
+    mysql-5.6:
+        image: mysql/mysql-server:5.6
+        container_name: mysql-5.6
+        mem_limit: 1024m
+        environment:
+            - MYSQL_ROOT_PASSWORD=docker
+            - MYSQL_ROOT_HOST=%
+        ports:
+            - ${MY_PORT:-3306}:3306
+        volumes:
+            - ./data/mysql-5.6:/var/lib/mysql
+            - ./docker/mysql-5.6/my.cnf:/etc/my.cnf
+
+
+### Nginx Server Container ##################################
+
+    nginx-1.10:
+        build:
+            context: ./docker/nginx-1.10
+        container_name: nginx-1.10
+        volumes:
+            - ./docker/nginx-1.10/sites/default.${ENV:-local}.conf:/etc/nginx/sites-available/default.conf
+        ports:
+            - ${NGINX_PORT_80:-80}:80
+            - ${NGINX_PORT_443:-443}:443
+
+
+### Weave Scope Container ###################################
+
+    weave-scope:
+        image: weaveworks/scope
+        container_name: weave-scope
+        pid: "host"
+        privileged: true
+        labels:
+          - "works.weave.role=system"
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock:rw"
+        command:
+          - "--probe.docker"
+          - "true"
+        ports:
+          - ${WS_PORT:-4040}:4040
+        logging:
+            driver: none
+
+### RabbitMQ Container ######################################
+
+    rabbitmq:
+        build: ./docker/rabbitmq
+        container_name: rabbitmq
+        ports:
+            - ${RABBIT_PORT_5672:-5672}:5672
+            - ${RABBIT_PORT_15671:-15671}:15671
+            - ${RABBIT_PORT_15672:-15672}:15672
+        privileged: true
+        environment:
+            RABBITMQ_DEFAULT_USER: docker
+            RABBITMQ_DEFAULT_PASS: docker
+
+### Portainer #############################################
+
+    portainer:
+        image: portainer/portainer
+        container_name: portainer
+        pid: "host"
+        privileged: true
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+        ports:
+          - ${PRT_PORT:-9000}:9000
+        logging:
+            driver: none

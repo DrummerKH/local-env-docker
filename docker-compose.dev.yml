@@ -1,0 +1,44 @@
+version: '2.1'
+
+services:
+
+### PostgreSQL 9.5 Container ####################################
+    postgres-9.5:
+        restart: unless-stopped
+
+### MYSQL 5.6 Container #########################################
+
+    mysql-5.6:
+        restart: unless-stopped
+
+### Nginx Server Container ##################################
+
+    nginx-1.10:
+        restart: unless-stopped
+        links:
+            - letsencrypt
+        volumes_from:
+            - letsencrypt
+
+### RabbitMQ Container ######################################
+
+    rabbitmq:
+        restart: unless-stopped
+
+### Portainer Container ###################################
+
+    portainer:
+        restart: unless-stopped
+
+### LetsEncrypt Container #######################################
+    letsencrypt:
+        build: ./docker/letsencrypt
+        container_name: letsencrypt
+        volumes:
+            - /etc/letsencrypt
+            - /var/lib/letsencrypt
+        ports:
+            - "80"
+            - "443"
+        environment:
+            - TERM=xterm
